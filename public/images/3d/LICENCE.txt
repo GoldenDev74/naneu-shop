@@ -1,0 +1,2 @@
+Illustrations 3D : Microsoft Fluent Emoji (https://github.com/microsoft/fluentui-emoji)
+Licence MIT — Copyright (c) Microsoft Corporation.

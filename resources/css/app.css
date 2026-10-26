@@ -1,0 +1,173 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+    h1, h2, h3 {
+        @apply font-display;
+    }
+
+    /* Les quantités et montants s'alignent en colonne. */
+    table {
+        font-variant-numeric: tabular-nums;
+    }
+
+    ::selection {
+        @apply bg-marque-200 text-marque-950;
+    }
+
+    /* Champs : remplace le bleu par défaut de @tailwindcss/forms. */
+    [type]:focus, input:not([type]):focus, select:focus, textarea:focus {
+        @apply border-marque-500 ring-marque-500;
+    }
+
+    [type='checkbox'], [type='radio'] {
+        @apply text-marque-600;
+    }
+
+    /* Focus clavier visible partout, jamais au clic souris. */
+    :focus-visible {
+        @apply outline-none ring-2 ring-marque-500 ring-offset-2 ring-offset-white dark:ring-marque-400 dark:ring-offset-slate-900;
+    }
+}
+
+@layer components {
+    /* ---------- Champs de formulaire ---------- */
+
+    .champ {
+        @apply block min-h-11 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-sm text-slate-900
+            shadow-[0_1px_2px_rgb(22_30_26/0.04)] transition duration-150
+            placeholder:text-slate-400 hover:border-slate-300
+            focus:border-marque-500 focus:bg-white focus:outline-none focus:ring-4 focus:ring-marque-500/15
+            disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-500
+            dark:border-slate-700 dark:bg-slate-800/60 dark:text-white dark:hover:border-slate-600
+            dark:focus:border-marque-400 dark:focus:ring-marque-400/20;
+    }
+
+    /* La flèche des listes déroulantes a besoin de place à droite. */
+    select.champ, select.champ-sm {
+        @apply pr-10;
+    }
+
+    /* Variante compacte, pour les saisies dans un tableau. */
+    .champ-sm {
+        @apply champ min-h-9 rounded-lg px-2.5 py-1.5;
+    }
+
+    .champ-erreur {
+        @apply border-rose-300 focus:border-rose-500 focus:ring-rose-500/15 dark:border-rose-800;
+    }
+
+    .case {
+        @apply h-[18px] w-[18px] shrink-0 cursor-pointer rounded-md border-slate-300 text-marque-600 transition
+            focus:ring-4 focus:ring-marque-500/20 focus:ring-offset-0
+            dark:border-slate-600 dark:bg-slate-800 dark:checked:bg-marque-500;
+    }
+
+    .radio {
+        @apply case rounded-full;
+    }
+
+    /* Zone de dépôt : le bouton du navigateur devient un bouton de la charte. */
+    .champ-fichier {
+        @apply block w-full cursor-pointer rounded-xl border border-dashed border-slate-300 bg-slate-50/70 p-1.5 text-sm text-slate-500 transition
+            hover:border-marque-400 hover:bg-marque-50/50
+            file:mr-3 file:cursor-pointer file:rounded-lg file:border-0 file:bg-marque-600 file:px-3.5 file:py-2
+            file:text-sm file:font-semibold file:text-white hover:file:bg-marque-700
+            dark:border-slate-700 dark:bg-slate-800/40 dark:text-slate-400;
+    }
+
+    /* Pied de formulaire : reste visible en bas pendant la saisie. */
+    .barre-actions {
+        @apply sticky bottom-4 z-20 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200/80
+            bg-white/90 px-5 py-3.5 shadow-[0_16px_40px_-16px_rgb(22_30_26/0.3)] backdrop-blur-md
+            dark:border-slate-700 dark:bg-slate-900/90;
+    }
+
+    .barre-actions .libelle {
+        @apply text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500 dark:text-slate-400;
+    }
+
+    .barre-actions .valeur {
+        @apply font-display text-xl font-bold tabular-nums text-slate-900 dark:text-white;
+    }
+
+    /* Une option à cocher dans un formulaire se présente en tuile. */
+    form label:has(> .case):not(.sans-tuile) {
+        @apply flex cursor-pointer items-start gap-3 rounded-xl border border-slate-200 bg-white px-3.5 py-3 text-sm text-slate-700 transition
+            hover:border-slate-300
+            dark:border-slate-700 dark:bg-slate-800/40 dark:text-slate-200;
+    }
+
+    form label:has(> .case:checked):not(.sans-tuile) {
+        @apply border-marque-300 bg-marque-50/70 text-marque-900 dark:border-marque-700 dark:bg-marque-900/30 dark:text-marque-100;
+    }
+
+    form label:has(> .case):not(.sans-tuile) > .case {
+        @apply mt-px;
+    }
+
+    /* Libellé espacé façon slogan : titres de section, sur-titres. */
+    .eyebrow {
+        @apply font-display text-[11px] font-bold uppercase tracking-slogan;
+    }
+
+    .btn {
+        @apply inline-flex min-h-10 items-center justify-center gap-1.5 rounded-lg px-4 py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60;
+    }
+
+    .btn-primaire {
+        @apply btn bg-marque-600 text-white shadow-sm hover:bg-marque-700 active:bg-marque-800;
+    }
+
+    .btn-secondaire {
+        @apply btn border border-slate-300 bg-white text-slate-700 shadow-sm hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700;
+    }
+
+    .btn-danger {
+        @apply btn bg-rose-600 text-white shadow-sm hover:bg-rose-700 active:bg-rose-800;
+    }
+}
+
+/* Tracé du monogramme : il se dessine une fois, à l'arrivée sur la page. */
+.logo-trace path {
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
+    animation: logo-trace 1.4s cubic-bezier(.6, 0, .2, 1) forwards;
+}
+.logo-trace path:nth-child(2) { animation-delay: .25s; }
+.logo-trace path:nth-child(3) { animation-delay: .1s; }
+.logo-trace path:nth-child(4) { animation-delay: .35s; }
+.logo-trace path:nth-child(5) { animation-delay: .5s; }
+
+/* Les illustrations 3D se posent à l'arrivée sur la page. */
+.illustration img {
+    animation: illustration-pose .7s cubic-bezier(.34, 1.56, .64, 1) both;
+}
+
+@keyframes illustration-pose {
+    from { opacity: 0; transform: translateY(6px) scale(.85) rotate(-6deg); }
+}
+
+@keyframes logo-trace {
+    to { stroke-dashoffset: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .logo-trace path {
+        animation: none;
+        stroke-dashoffset: 0;
+    }
+
+    *, *::before, *::after {
+        transition-duration: .01ms !important;
+        animation-duration: .01ms !important;
+    }
+}
+
+/* Fenêtres de consultation (x-popup) : fond qui se pose, carte qui monte. */
+.popup-fond { animation: popup-fond .2s ease-out both; }
+.popup-carte { animation: popup-carte .28s cubic-bezier(.2, .8, .2, 1) both; }
+
+@keyframes popup-fond { from { opacity: 0; } }
+@keyframes popup-carte { from { opacity: 0; transform: translateY(1.25rem) scale(.98); } }
