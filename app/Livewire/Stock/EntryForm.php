@@ -187,7 +187,10 @@ class EntryForm extends Component
         return [
             'lignes.required'              => 'Ajoutez au moins un produit au bon d\'entrée.',
             'lignes.min'                   => 'Ajoutez au moins un produit au bon d\'entrée.',
+            'lignes.*.quantity.required'   => 'Saisissez une quantité.',
+            'lignes.*.quantity.numeric'    => 'La quantité doit être un nombre.',
             'lignes.*.quantity.gt'         => 'La quantité doit être supérieure à zéro.',
+            'lignes.*.purchase_price.required' => 'Saisissez le prix d\'achat unitaire (supérieur à zéro).',
             'lignes.*.expiry_date.after'   => 'La date de péremption doit être postérieure à la date de réception.',
             'entry_date.before_or_equal'   => 'La date de réception ne peut pas être dans le futur.',
         ];

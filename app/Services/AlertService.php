@@ -103,70 +103,79 @@ class AlertService
             ->get();
 
         foreach ($batches as $batch) {
-            $product = $batch->product;
-
-            if (! $product || ! $product->is_active) {
-                continue;
-            }
-
-            $days = $batch->daysUntilExpiry();
-
-            if ($days === null) {
-                continue;
-            }
-
-            if ($days < 0) {
-                // Périmé : l'alerte « proche » n'a plus de sens.
-                $this->resolveOpen($product, AlertType::PeremptionProche, $batch);
-
-                $opened = $this->collectOpened($opened, $this->open(
-                    $product,
-                    AlertType::Perime,
-                    sprintf(
-                        'PÉRIMÉ depuis %d jour%s : %s — lot %s, %s, valeur %s.',
-                        abs($days),
-                        abs($days) > 1 ? 's' : '',
-                        $product->name,
-                        $batch->batch_number,
-                        $this->formatQuantity($product, (float) $batch->quantity_remaining),
-                        Money::format($batch->remainingValue()),
-                    ),
-                    batch: $batch,
-                    currentValue: (float) $batch->quantity_remaining,
-                    daysRemaining: $days,
-                ));
-
-                continue;
-            }
-
-            $threshold = $product->expiryAlertDays();
-
-            if ($days <= $threshold) {
-                $critical = $days <= (int) config('naneu.stock.expiry_critical_days', 7);
-
-                $opened = $this->collectOpened($opened, $this->open(
-                    $product,
-                    AlertType::PeremptionProche,
-                    sprintf(
-                        '%s expire dans %d jour%s (%s) — lot %s, %s.',
-                        $product->name,
-                        $days,
-                        $days > 1 ? 's' : '',
-                        $batch->expiry_date->format('d/m/Y'),
-                        $batch->batch_number,
-                        $this->formatQuantity($product, (float) $batch->quantity_remaining),
-                    ),
-                    batch: $batch,
-                    currentValue: (float) $batch->quantity_remaining,
-                    daysRemaining: $days,
-                    severity: $critical ? AlertSeverity::Critique : AlertSeverity::Avertissement,
-                ));
-            }
+            $opened = $this->collectOpened($opened, $this->checkBatchExpiry($batch));
         }
 
         $this->closeStaleBatchAlerts();
 
         return $opened->filter();
+    }
+
+    /**
+     * Évalue la péremption d'un seul lot et ouvre l'alerte correspondante.
+     * Appelée par le balayage quotidien, mais aussi dès la réception : un
+     * lot qui arrive déjà proche de sa date ne doit pas attendre le
+     * passage du planificateur le lendemain matin pour être signalé.
+     */
+    public function checkBatchExpiry(StockBatch $batch): ?StockAlert
+    {
+        $product = $batch->product;
+
+        if (! $product || ! $product->is_active || $batch->quantity_remaining <= 0) {
+            return null;
+        }
+
+        $days = $batch->daysUntilExpiry();
+
+        if ($days === null) {
+            return null;
+        }
+
+        if ($days < 0) {
+            // Périmé : l'alerte « proche » n'a plus de sens.
+            $this->resolveOpen($product, AlertType::PeremptionProche, $batch);
+
+            return $this->open(
+                $product,
+                AlertType::Perime,
+                sprintf(
+                    'PÉRIMÉ depuis %d jour%s : %s — lot %s, %s, valeur %s.',
+                    abs($days),
+                    abs($days) > 1 ? 's' : '',
+                    $product->name,
+                    $batch->batch_number,
+                    $this->formatQuantity($product, (float) $batch->quantity_remaining),
+                    Money::format($batch->remainingValue()),
+                ),
+                batch: $batch,
+                currentValue: (float) $batch->quantity_remaining,
+                daysRemaining: $days,
+            );
+        }
+
+        if ($days > $product->expiryAlertDays()) {
+            return null;
+        }
+
+        $critical = $days <= (int) config('naneu.stock.expiry_critical_days', 7);
+
+        return $this->open(
+            $product,
+            AlertType::PeremptionProche,
+            sprintf(
+                '%s expire dans %d jour%s (%s) — lot %s, %s.',
+                $product->name,
+                $days,
+                $days > 1 ? 's' : '',
+                $batch->expiry_date->format('d/m/Y'),
+                $batch->batch_number,
+                $this->formatQuantity($product, (float) $batch->quantity_remaining),
+            ),
+            batch: $batch,
+            currentValue: (float) $batch->quantity_remaining,
+            daysRemaining: $days,
+            severity: $critical ? AlertSeverity::Critique : AlertSeverity::Avertissement,
+        );
     }
 
     /**

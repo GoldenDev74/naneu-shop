@@ -116,7 +116,8 @@ class AlertTest extends TestCase
             new EntryLineData($this->produit->id, 10, 2200, Carbon::now()->addDays(5)),
         ]);
 
-        $ouvertes = $this->alerts->scanExpiries();
+        // L'alerte s'ouvre dès la réception, sans attendre le scan du matin.
+        $ouvertes = StockAlert::query()->open()->get();
 
         $this->assertCount(1, $ouvertes);
 
@@ -124,6 +125,8 @@ class AlertTest extends TestCase
         $this->assertSame(AlertType::PeremptionProche, $alerte->type);
         $this->assertSame(\App\Enums\AlertSeverity::Critique, $alerte->severity, 'Sous 7 jours, la gravité passe en critique.');
         $this->assertSame(5, $alerte->days_remaining);
+
+        $this->assertCount(0, $this->alerts->scanExpiries(), 'Le scan ne doit pas dupliquer l\'alerte.');
     }
 
     public function test_un_lot_perime_remplace_lalerte_de_peremption_proche(): void

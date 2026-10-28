@@ -122,6 +122,10 @@ class StockService
                 // d'attendre le passage du planificateur le lendemain matin.
                 $this->alerts->refreshForProduct($product->fresh());
 
+                // Même logique pour la péremption : un lot reçu déjà proche
+                // de sa date doit être signalé dès maintenant.
+                $this->alerts->checkBatchExpiry($batch->setRelation('product', $product));
+
                 event(new StockLevelChanged($product->fresh(), $before, $after));
             }
 
@@ -157,6 +161,8 @@ class StockService
                 'expiry_date'      => $product->estimatedExpiryFor($lot->received_at)->toDateString(),
                 'expiry_estimated' => true,
             ])->save();
+
+            $this->alerts->checkBatchExpiry($lot->setRelation('product', $product));
         }
 
         if ($lots->isNotEmpty()) {

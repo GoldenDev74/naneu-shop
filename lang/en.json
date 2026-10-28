@@ -996,5 +996,9 @@
     "Contient…": "Contains…",
     "ex. 10, >10, <5, 10-20": "e.g. 10, >10, <5, 10-20",
     "Périssable": "Perishable",
-    "Non périssable": "Non-perishable"
+    "Non périssable": "Non-perishable",
+    "Saisissez une quantité.": "Enter a quantity.",
+    "La quantité doit être un nombre.": "The quantity must be a number.",
+    "Saisissez le prix d'achat unitaire (supérieur à zéro).": "Enter the unit purchase price (above zero).",
+    "Prix": "Price"
 }

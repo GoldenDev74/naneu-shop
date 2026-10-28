@@ -142,6 +142,8 @@
                                         <input type="text"
                                                wire:model.live.debounce.400ms="lignes.{{ $index }}.purchase_price"
                                                inputmode="numeric"
+                                               placeholder="{{ __('Prix') }}"
+                                               aria-label="{{ __('Prix d\'achat unitaire') }}"
                                                class="champ-sm w-28 text-right tabular-nums">
                                         @error("lignes.{$index}.purchase_price")
                                             <p class="mt-0.5 text-right text-xs text-rose-600">{{ __($message) }}</p>
