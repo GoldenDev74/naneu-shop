@@ -2,6 +2,9 @@
 
 namespace App\Providers;
 
+use App\Http\Middleware\EnsurePasswordIsCurrent;
+use App\Http\Middleware\EnsureUserCanAccessSection;
+use App\Http\Middleware\EnsureUserIsActive;
 use App\Listeners\RecordAuthenticationAudit;
 use App\Listeners\RecordStockMovementAudit;
 use App\Models\User;
@@ -15,6 +18,7 @@ use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
+use Livewire\Livewire;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -88,6 +92,16 @@ class AppServiceProvider extends ServiceProvider
         if ($this->app->isProduction()) {
             URL::forceScheme('https');
         }
+
+        // Chaque clic dans une page Livewire passe par /livewire/update, qui
+        // ne rejoue que les middlewares « persistants » de la route d'origine.
+        // Sans cette liste, une page ouverte avant un retrait de droits (menu
+        // retiré, gérant rétrogradé, compte suspendu) restait utilisable.
+        Livewire::addPersistentMiddleware([
+            EnsureUserIsActive::class,
+            EnsurePasswordIsCurrent::class,
+            EnsureUserCanAccessSection::class,
+        ]);
     }
 
     private function registerSubscribers(): void

@@ -32,7 +32,7 @@ const abonner = () => {
             window.Livewire?.dispatch('alerte-resolue', { alerte: e });
         })
         .error((erreur) => {
-            // Un magasinier sans droit sur ce canal reçoit un 403 : ce n'est
+            // Un compte sans le menu Alertes reçoit un 403 : ce n'est
             // pas une panne, inutile de polluer la console.
             if (erreur?.status !== 403) {
                 console.warn('Reverb — canal alertes indisponible', erreur);

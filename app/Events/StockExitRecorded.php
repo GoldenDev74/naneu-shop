@@ -36,8 +36,6 @@ class StockExitRecorded implements ShouldBroadcast
             'reference' => $this->exit->reference,
             'type'      => $this->exit->type->value,
             'lignes'    => $this->exit->lines->count(),
-            'total'     => $this->exit->total_sale,
-            'cout'      => $this->exit->total_cost,
             'par'       => $this->exit->user?->name,
         ];
     }

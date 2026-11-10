@@ -1,6 +1,5 @@
 <?php
 
-use App\Enums\UserRole;
 use App\Models\User;
 use Illuminate\Support\Facades\Broadcast;
 
@@ -19,14 +18,18 @@ Broadcast::channel('App.Models.User.{id}', function (User $user, int $id) {
     return $user->id === $id && $user->is_active;
 });
 
-/** Mouvements de stock : visibles par tout compte actif. */
+/**
+ * Mouvements de stock : visibles par tout compte actif. Le canal ne sert
+ * qu'à rafraîchir les écrans : aucun montant n'y circule, les prix restant
+ * réservés à la gérance.
+ */
 Broadcast::channel('naneu.stock', function (User $user) {
     return $user->is_active;
 });
 
-/** Alertes : réservées aux profils qui peuvent y répondre. */
+/** Alertes : suivent le droit sur le menu Alertes (User::accessLevel). */
 Broadcast::channel('naneu.alertes', function (User $user) {
-    return $user->is_active && $user->hasAtLeast(UserRole::Magasinier);
+    return $user->canAccess('alertes');
 });
 
 /** Canal d'administration : évènements de comptes et de paramètres. */
