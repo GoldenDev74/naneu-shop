@@ -21,6 +21,11 @@ concurrency:
 jobs:
   tests:
     runs-on: ubuntu-latest
+    # Base en mémoire dès l'installation : composer lance artisan
+    # (package:discover) avant que le .env de test n'existe.
+    env:
+      DB_CONNECTION: sqlite
+      DB_DATABASE: ':memory:'
     steps:
       - uses: actions/checkout@v4
 

@@ -59,9 +59,11 @@ COPY . .
 COPY --from=vendor /app/vendor ./vendor
 COPY --from=assets /app/public/build ./public/build
 
+# package:discover démarre l'application sans .env : sans DB_CONNECTION,
+# Laravel tenterait d'ouvrir une base SQLite qui n'existe pas.
 RUN mkdir -p storage/app/private storage/app/public storage/logs bootstrap/cache \
         storage/framework/views storage/framework/cache/data storage/framework/sessions \
-    && composer dump-autoload --no-dev --optimize --no-interaction \
+    && DB_CONNECTION=pgsql composer dump-autoload --no-dev --optimize --no-interaction \
     && chmod +x docker/app/entrypoint.prod.sh
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=3 \

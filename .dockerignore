@@ -14,7 +14,8 @@ auth.json
 /public/storage
 /bootstrap/cache/*.php
 
-# Données d'exécution.
+# Données d'exécution (dont les bases SQLite de développement).
+/database/*.sqlite*
 /storage/app/*
 /storage/logs/*
 /storage/framework/cache/*
