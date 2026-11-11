@@ -1,0 +1,78 @@
+# Production Naneu Shop — à utiliser sur le VPS uniquement.
+#
+# Le VPS ne contient que ce fichier et le .env (modèle : .env.production.example).
+# L'image est construite par GitHub Actions et publiée sur GHCR.
+#
+#   Mise en ligne ou mise à jour, depuis le dossier qui contient ces 2 fichiers :
+#
+#     sudo docker compose -f docker-compose.prod.yml pull
+#     sudo docker compose -f docker-compose.prod.yml run --rm app php artisan migrate --force
+#     sudo docker compose -f docker-compose.prod.yml up -d --remove-orphans
+#
+#   Revenir à une version précédente : NANEU_IMAGE_TAG=<étiquette> dans le .env,
+#   puis les mêmes commandes pull + up.
+#
+# Tous les ports sont liés à 127.0.0.1 : rien n'est joignable depuis Internet
+# sans passer par Apache (Docker ne tient pas compte du pare-feu UFW).
+#
+#   127.0.0.1:8088  application   <- Apache, https://naneushop.com
+#   127.0.0.1:8080  Reverb        <- Apache, WebSocket
+
+x-app: &app
+  image: ghcr.io/goldendev74/naneu-shop:${NANEU_IMAGE_TAG:-latest}
+  volumes:
+    - ./.env:/app/.env:ro
+    # Photos de produits, bons scannés et exports : à inclure dans les sauvegardes.
+    - storage-app:/app/storage/app
+    - storage-logs:/app/storage/logs
+  depends_on:
+    db:
+      condition: service_healthy
+  restart: unless-stopped
+
+services:
+  app:
+    <<: *app
+    ports:
+      - "127.0.0.1:8088:80"
+
+  queue:
+    <<: *app
+    healthcheck:
+      disable: true
+    command: php artisan queue:work --sleep=2 --tries=3 --max-time=3600
+
+  scheduler:
+    <<: *app
+    healthcheck:
+      disable: true
+    command: php artisan schedule:work
+
+  reverb:
+    <<: *app
+    healthcheck:
+      disable: true
+    command: php artisan reverb:start --host=0.0.0.0 --port=8080
+    ports:
+      - "127.0.0.1:8080:8080"
+
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${DB_DATABASE}
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      TZ: Africa/Lome
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME} -d ${DB_DATABASE}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+volumes:
+  storage-app:
+  storage-logs:
+  pgdata:

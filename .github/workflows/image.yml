@@ -1,0 +1,87 @@
+# Teste l'application, puis construit l'image de production et la publie sur
+# GHCR. Le VPS n'a plus qu'à la télécharger (docker compose pull).
+#
+# À régler une fois dans GitHub › Settings › Secrets and variables › Actions,
+# onglet « Variables » :
+#   REVERB_APP_KEY   la même valeur que REVERB_APP_KEY dans le .env du VPS
+#                    (clé publique : elle est envoyée au navigateur).
+
+name: Image de production
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  workflow_dispatch:
+
+concurrency:
+  group: image-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: pdo_sqlite, sqlite3, gd, zip, intl, bcmath, pcntl, exif
+          coverage: none
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: composer install --no-interaction --prefer-dist
+      - run: npm ci
+      - run: npm run build
+
+      - name: Préparer l'environnement de test
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+
+      - run: php artisan test
+
+  image:
+    needs: tests
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Étiquettes : « latest » sur main, le numéro de version sur une étiquette
+      # git v1.2.3, et toujours l'identifiant du commit pour pouvoir revenir en arrière.
+      - id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/goldendev74/naneu-shop
+          tags: |
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=semver,pattern={{version}}
+            type=sha,prefix=sha-,format=short
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/app/Dockerfile.prod
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            VITE_REVERB_APP_KEY=${{ vars.REVERB_APP_KEY }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

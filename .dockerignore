@@ -1,0 +1,43 @@
+# Ce qui n'entre jamais dans une image Docker.
+
+# Secrets et configuration locale : le .env est fourni au conteneur, pas à l'image.
+.env
+.env.backup
+.env.production
+auth.json
+
+# Dépendances et fichiers générés : reconstruits dans l'image.
+/vendor
+/node_modules
+/public/build
+/public/hot
+/public/storage
+/bootstrap/cache/*.php
+
+# Données d'exécution.
+/storage/app/*
+/storage/logs/*
+/storage/framework/cache/*
+/storage/framework/sessions/*
+/storage/framework/testing/*
+/storage/framework/views/*
+/storage/pail
+*.log
+
+# Hors application.
+.git
+.github
+.remember
+.phpunit.cache
+.phpunit.result.cache
+/graphify-out
+/docs
+/tests
+phpunit.xml
+demo-fifo.php
+docker-compose*.yml
+.idea
+.vscode
+.fleet
+.zed
+.nova
