@@ -254,11 +254,11 @@ class Product extends Model
     }
 
     // -----------------------------------------------------------------
-    // Image (MinIO)
+    // Image
     // -----------------------------------------------------------------
 
     /**
-     * Les objets MinIO sont privés : on sert une URL signée à durée de vie
+     * Les fichiers sont privés : on sert une URL signée à durée de vie
      * courte plutôt qu'un lien public permanent.
      */
     public function imageUrl(): ?string
@@ -275,7 +275,7 @@ class Product extends Model
                 now()->addMinutes((int) config('naneu.storage.temp_url_ttl', 15))
             );
         } catch (\Throwable) {
-            // MinIO indisponible : la fiche produit reste utilisable sans image.
+            // Stockage indisponible : la fiche produit reste utilisable sans image.
             return null;
         }
     }

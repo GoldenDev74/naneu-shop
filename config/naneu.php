@@ -130,9 +130,11 @@ return [
     */
 
     'storage' => [
-        'disk'            => env('NANEU_STORAGE_DISK', 'minio'),
+        // « local » = storage/app/private, sur le disque du serveur. Les fichiers
+        // sont privés et servis par l'application via des liens signés.
+        'disk'            => env('NANEU_STORAGE_DISK', 'local'),
         // Disque utilisé pour signer les liens ouverts par le navigateur.
-        'signing_disk'    => env('NANEU_STORAGE_SIGNING_DISK', 'minio_public'),
+        'signing_disk'    => env('NANEU_STORAGE_SIGNING_DISK', 'local'),
         'products_path'   => 'produits',
         'exports_path'    => 'exports',
         'max_image_kb'    => 2048,

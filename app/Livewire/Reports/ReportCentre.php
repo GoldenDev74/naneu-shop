@@ -146,10 +146,11 @@ class ReportCentre extends Component
     }
 
     /**
-     * Archive une copie de l'inventaire valorisé sur MinIO. Sert de trace
-     * datée, utile pour justifier la valeur du stock a posteriori.
+     * Archive une copie de l'inventaire valorisé dans le stockage des
+     * fichiers. Sert de trace datée, utile pour justifier la valeur du stock
+     * a posteriori.
      */
-    public function archiverSurMinio(ReportService $reports): void
+    public function archiverInventaire(ReportService $reports): void
     {
         try {
             $lignes = ["Inventaire valorisé — ".config('naneu.shop.name'),
@@ -171,13 +172,16 @@ class ReportCentre extends Component
 
             $chemin = config('naneu.storage.exports_path').'/inventaire_'.now()->format('Y-m-d_His').'.csv';
 
-            Storage::disk(config('naneu.storage.disk'))->put($chemin, "\xEF\xBB\xBF".implode("\n", $lignes));
+            // Le disque local signale un échec par « false », sans exception.
+            if (! Storage::disk(config('naneu.storage.disk'))->put($chemin, "\xEF\xBB\xBF".implode("\n", $lignes))) {
+                throw new \RuntimeException('Le disque a refusé le fichier.');
+            }
 
-            $this->toastSucces(__('Inventaire archivé sur MinIO : :chemin', ['chemin' => $chemin]));
+            $this->toastSucces(__('Inventaire archivé : :chemin', ['chemin' => $chemin]));
         } catch (\Throwable $e) {
             report($e);
 
-            $this->toastErreur(__('Archivage impossible : MinIO est-il démarré ? :erreur', ['erreur' => str($e->getMessage())->limit(120)]));
+            $this->toastErreur(__('Archivage impossible : :erreur', ['erreur' => str($e->getMessage())->limit(120)]));
         }
     }
 

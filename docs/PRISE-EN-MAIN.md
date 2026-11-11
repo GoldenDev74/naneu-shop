@@ -46,9 +46,6 @@ PGADMIN_PASSWORD=choisis-un-mot-de-passe
 REVERB_APP_ID=123456
 REVERB_APP_KEY=        # 32 caractères aléatoires
 REVERB_APP_SECRET=     # 32 caractères aléatoires
-
-MINIO_ACCESS_KEY_ID=naneu
-MINIO_SECRET_ACCESS_KEY=   # 8 caractères minimum
 ```
 
 Pour générer des valeurs aléatoires de 32 caractères :
@@ -77,8 +74,7 @@ Le premier démarrage télécharge et construit les images (5 à 10 minutes). V�
 docker compose ps
 ```
 
-Les services `app`, `queue`, `scheduler`, `reverb`, `db`, `pgadmin` et `minio` doivent être à l'état *running*
-(`minio-init` s'arrête normalement après avoir créé le compartiment de fichiers).
+Les services `app`, `queue`, `scheduler`, `reverb`, `db` et `pgadmin` doivent être à l'état *running*.
 
 ### 2.4 Initialiser l'application
 
@@ -211,7 +207,7 @@ docker compose exec app tail -n 50 storage/logs/laravel.log
 | Page blanche ou sans mise en forme | `npm run build` n'a pas été lancé, ou a échoué. Relance-le. |
 | *No application encryption key* | `docker compose exec app php artisan key:generate` |
 | Erreur de connexion à la base | Vérifie `DB_PASSWORD` dans `.env`, puis `docker compose restart`. Si tu as changé le mot de passe après le premier démarrage : `docker compose down -v` (⚠️ efface les données) puis reprends l'étape 2.3. |
-| Photos de produits absentes | Vérifie `MINIO_ACCESS_KEY_ID` / `MINIO_SECRET_ACCESS_KEY` ; **Paramètres → Tester la connexion** MinIO. |
+| Photos de produits absentes | **Paramètres → Tester le stockage**. Les fichiers sont dans `storage/app/private`. |
 | La cloche ne bouge pas en direct | Vérifie que `reverb` et `queue` tournent (`docker compose ps`). La cloche se rafraîchit aussi toute seule chaque minute. |
 | Déconnecté tout seul | Normal après 30 minutes d'inactivité (réglable dans Paramètres). |
 | Repartir de zéro | `docker compose exec app php artisan migrate:fresh --seed --seeder=DemoSeeder` (⚠️ efface les données). |

@@ -24,11 +24,11 @@
                 <x-icon name="download" class="h-4 w-4" /> {{ __('Lots (CSV)') }}
             </button>
 
-            <button wire:click="archiverSurMinio" wire:loading.attr="disabled"
+            <button wire:click="archiverInventaire" wire:loading.attr="disabled"
                     class="btn-primaire">
                 <x-icon name="layers" class="h-4 w-4" />
-                <span wire:loading.remove wire:target="archiverSurMinio">{{ __('Archiver sur MinIO') }}</span>
-                <span wire:loading wire:target="archiverSurMinio">{{ __('Archivage…') }}</span>
+                <span wire:loading.remove wire:target="archiverInventaire">{{ __("Archiver l'inventaire") }}</span>
+                <span wire:loading wire:target="archiverInventaire">{{ __('Archivage…') }}</span>
             </button>
         </div>
     </div>
