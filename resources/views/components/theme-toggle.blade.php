@@ -1,7 +1,7 @@
 {{--
     Bascule clair / sombre. Le choix est mémorisé dans localStorage et
-    appliqué avant le premier rendu (voir resources/js/app.js) pour éviter
-    le flash blanc au chargement.
+    appliqué avant le premier rendu et après chaque navigation Livewire
+    (voir resources/js/theme.js).
 --}}
 <button x-data
         @click="
