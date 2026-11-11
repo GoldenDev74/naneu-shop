@@ -278,6 +278,10 @@ class UserManager extends Component
                 : $this->password;
         }
 
+        // Droits avant modification : calculés avant d'appliquer le nouveau
+        // rôle, sinon le journal montre déjà les droits du nouveau profil.
+        $droitsAvant = $nouveau ? null : $utilisateur->permissionMatrix();
+
         $utilisateur->fill([
             'name'      => $donnees['name'],
             'username'  => $donnees['username'],
@@ -287,8 +291,7 @@ class UserManager extends Component
             'is_active' => $donnees['is_active'],
         ]);
 
-        $droitsAvant = $nouveau ? null : $utilisateur->permissionMatrix();
-        $utilisateur->permissions = $this->permissionsAEnregistrer(UserRole::from($donnees['role']));
+        $utilisateur->permissions =$this->permissionsAEnregistrer(UserRole::from($donnees['role']));
 
         if ($motDePasseClair !== null) {
             $utilisateur->password = Hash::make($motDePasseClair);

@@ -105,6 +105,23 @@ class StockFifoTest extends TestCase
         $this->assertSame(4200, $this->produit->last_purchase_price);
     }
 
+    /**
+     * Le canal naneu.stock est ouvert à tout compte actif, caisse comprise :
+     * aucun montant (coût d'achat, total de vente) ne doit y circuler.
+     */
+    public function test_les_evenements_diffuses_ne_contiennent_aucun_montant(): void
+    {
+        $this->recevoirTroisLots();
+        $this->stock->issue($this->utilisateur, ExitType::Vente, [new ExitLineData($this->produit->id, 3, 5500)]);
+
+        $sansMontant = fn ($evenement) => array_intersect(['total', 'cout'], array_keys($evenement->broadcastWith())) === [];
+
+        Event::assertDispatched(\App\Events\StockEntryRecorded::class, $sansMontant);
+        Event::assertDispatched(\App\Events\StockExitRecorded::class, $sansMontant);
+        Event::assertNotDispatched(\App\Events\StockEntryRecorded::class, fn ($e) => ! $sansMontant($e));
+        Event::assertNotDispatched(\App\Events\StockExitRecorded::class, fn ($e) => ! $sansMontant($e));
+    }
+
     public function test_la_sortie_consomme_le_lot_le_plus_ancien_en_premier(): void
     {
         // Cas d'une boutique assujettie : la TVA est extraite du prix TTC.

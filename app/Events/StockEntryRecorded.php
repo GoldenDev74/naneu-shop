@@ -35,7 +35,6 @@ class StockEntryRecorded implements ShouldBroadcast
             'id'          => $this->entry->id,
             'reference'   => $this->entry->reference,
             'lignes'      => $this->entry->lines->count(),
-            'total'       => $this->entry->total_cost,
             'fournisseur' => $this->entry->supplier?->name,
             'par'         => $this->entry->user?->name,
         ];
