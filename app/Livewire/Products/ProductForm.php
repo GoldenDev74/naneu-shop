@@ -267,7 +267,7 @@ class ProductForm extends Component
     }
 
     /**
-     * L'image part sur MinIO. Un échec de téléversement ne doit pas faire
+     * L'image part dans le stockage des fichiers. Un échec de téléversement ne doit pas faire
      * perdre la fiche produit : on la garde, on signale l'image manquante.
      */
     private function televerserImage(Product $produit): bool

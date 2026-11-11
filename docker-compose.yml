@@ -4,7 +4,6 @@
 #
 #   Application   http://localhost:8088
 #   pgAdmin       http://localhost:5050
-#   MinIO         http://localhost:9001 (console) — API sur 9000
 #   PostgreSQL    localhost:5433 (5432 est pris par un PostgreSQL local)
 #
 # Les secrets viennent du fichier .env (Compose le lit automatiquement).
@@ -26,15 +25,9 @@ x-app: &app
     REVERB_HOST: reverb
     REVERB_PORT: 8080
     APP_URL: http://localhost:8088
-    # Envoi des fichiers par le réseau Docker ; les liens signés, eux,
-    # visent l'adresse du navigateur (disque minio_public).
-    MINIO_ENDPOINT: http://minio:9000
-    MINIO_PUBLIC_ENDPOINT: http://localhost:9000
   depends_on:
     db:
       condition: service_healthy
-    minio-init:
-      condition: service_completed_successfully
   restart: unless-stopped
 
 services:
@@ -100,42 +93,9 @@ services:
       - db
     restart: unless-stopped
 
-  minio:
-    image: minio/minio:latest
-    command: server /data --console-address ":9001"
-    environment:
-      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY_ID}
-      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_ACCESS_KEY}
-    ports:
-      - "9000:9000"
-      - "9001:9001"
-    volumes:
-      - miniodata:/data
-    healthcheck:
-      test: ["CMD", "mc", "ready", "local"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
-    restart: unless-stopped
-
-  # Crée le bucket au premier démarrage, puis s'arrête.
-  minio-init:
-    image: minio/mc:latest
-    depends_on:
-      minio:
-        condition: service_healthy
-    entrypoint: >
-      /bin/sh -c "
-      mc alias set local http://minio:9000 $${MINIO_ROOT_USER} $${MINIO_ROOT_PASSWORD} &&
-      mc mb --ignore-existing local/${MINIO_BUCKET}
-      "
-    environment:
-      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY_ID}
-      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_ACCESS_KEY}
 
 volumes:
   vendor:
   framework:
   pgdata:
   pgadmindata:
-  miniodata:

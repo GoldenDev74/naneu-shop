@@ -214,8 +214,8 @@
     </x-form.card>
 
     {{-- ============ STOCKAGE ============ --}}
-    <x-form.card icon="hard-drive" :title="__('Stockage des fichiers (MinIO)')"
-                 :description="__('Photos de produits et documents fournisseurs. Les objets sont privés : l\'application sert des liens signés de courte durée.')">
+    <x-form.card icon="hard-drive" :title="__('Stockage des fichiers')"
+                 :description="__('Photos de produits et documents fournisseurs. Les fichiers sont privés : l\'application sert des liens signés de courte durée.')">
 
         <dl class="grid gap-3 text-sm sm:grid-cols-2">
             <div>
@@ -223,28 +223,16 @@
                 <dd class="font-mono text-slate-800 dark:text-slate-100">{{ $disque }}</dd>
             </div>
             <div>
-                <dt class="text-xs uppercase tracking-wide text-slate-400">{{ __('Point d\'accès') }}</dt>
-                <dd class="font-mono break-all text-slate-800 dark:text-slate-100">
-                    {{ config('filesystems.disks.'.$disque.'.endpoint') ?? '—' }}
-                </dd>
-            </div>
-            <div>
-                <dt class="text-xs uppercase tracking-wide text-slate-400">Bucket</dt>
-                <dd class="font-mono text-slate-800 dark:text-slate-100">
-                    {{ config('filesystems.disks.'.$disque.'.bucket') ?? '—' }}
-                </dd>
-            </div>
-            <div>
                 <dt class="text-xs uppercase tracking-wide text-slate-400">{{ __('Durée des liens signés') }}</dt>
                 <dd class="text-slate-800 dark:text-slate-100">{{ config('naneu.storage.temp_url_ttl') }} {{ __('minutes') }}</dd>
             </div>
         </dl>
 
-        <button type="button" wire:click="testerMinio" wire:loading.attr="disabled"
+        <button type="button" wire:click="testerStockage" wire:loading.attr="disabled"
                 class="btn-secondaire mt-4">
             <x-icon name="refresh" class="h-4 w-4" />
-            <span wire:loading.remove wire:target="testerMinio">{{ __('Tester la connexion') }}</span>
-            <span wire:loading wire:target="testerMinio">{{ __('Test en cours…') }}</span>
+            <span wire:loading.remove wire:target="testerStockage">{{ __('Tester le stockage') }}</span>
+            <span wire:loading wire:target="testerStockage">{{ __('Test en cours…') }}</span>
         </button>
     </x-form.card>
 </div>

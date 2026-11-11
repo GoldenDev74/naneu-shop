@@ -25,7 +25,7 @@ pour une alimentation générale de **Lomé (Togo)** spécialisée dans les prod
 | Domaine | Ce que fait l'application |
 |---|---|
 | **Caisse** | Vente au comptoir en espèces, rendu de monnaie, ticket 80 mm (impression et PDF), vignettes rapides pour les produits sans code-barres, scan douchette. |
-| **Catalogue** | Produits, catégories arborescentes, unités, fournisseurs locaux et importés, photos (MinIO), code-barres EAN ou code interne. |
+| **Catalogue** | Produits, catégories arborescentes, unités, fournisseurs locaux et importés, photos, code-barres EAN ou code interne. |
 | **Entrées** | Bon de réception multi-lignes : chaque ligne crée un **lot** (prix d'achat, date limite). Frais de transport rattachés en charge. |
 | **Sorties** | Vente, perte, péremption, casse, ajustement, retour fournisseur, consommation interne. Aperçu FIFO lot par lot avant validation. |
 | **Péremptions** | Lots périmés **bloqués à la vente**, tableau d'aide à la décision (rythme de vente, invendus prévus), durée de conservation pour les produits frais sans date. |
@@ -73,7 +73,6 @@ Application : **http://localhost:8088**
 |---|---|
 | Application | http://localhost:8088 |
 | pgAdmin | http://localhost:5050 |
-| Console MinIO | http://localhost:9001 (API sur 9000) |
 | PostgreSQL | `localhost:5433` |
 | WebSocket (Reverb) | `localhost:8080` |
 
@@ -113,8 +112,8 @@ app/
 | Interface | Livewire 3, Volt, Alpine.js, Tailwind CSS 3 (thème clair / sombre) |
 | Temps réel | Laravel Reverb (WebSocket), files d'attente Laravel |
 | Données | PostgreSQL 16 (production) — SQLite en mémoire pour les tests |
-| Fichiers | MinIO (compatible S3), liens signés temporaires |
-| Serveur | FrankenPHP dans Docker ; services `app`, `queue`, `scheduler`, `reverb`, `db`, `pgadmin`, `minio` |
+| Fichiers | Disque du serveur (`storage/app/private`), liens signés temporaires |
+| Serveur | FrankenPHP dans Docker ; services `app`, `queue`, `scheduler`, `reverb`, `db`, `pgadmin` |
 
 **Principe directeur :** aucun code n'écrit directement dans les lots, les mouvements ou les quantités en stock.
 Tout passe par `StockService`, dans une transaction, ce qui garde le grand livre cohérent avec les lots.
@@ -188,9 +187,9 @@ la traduction et le rendu de tous les écrans.
 ## Mise en production
 
 - `APP_ENV=production`, `APP_DEBUG=false`, `SESSION_SECURE_COOKIE=true`
-- `APP_URL`, `MINIO_PUBLIC_ENDPOINT` et `REVERB_*` sur l'adresse publique en HTTPS, puis `npm run build`
+- `APP_URL` et `VITE_REVERB_*` sur l'adresse publique en HTTPS (voir `.env.production.example` et `docker-compose.prod.yml`)
 - `php artisan config:cache route:cache view:cache`
-- Remplacer les comptes de démonstration ; n'exposer ni pgAdmin, ni PostgreSQL, ni la console MinIO
+- Remplacer les comptes de démonstration ; n'exposer ni pgAdmin, ni PostgreSQL
 - Exposition possible sans ouvrir de port via un tunnel Cloudflare (service `cloudflared`)
 
 ---

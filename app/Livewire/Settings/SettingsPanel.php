@@ -184,17 +184,17 @@ class SettingsPanel extends Component
     }
 
     /**
-     * Vérifie que MinIO répond. Sans ce test, un problème de configuration
-     * ne se découvre qu'au moment d'envoyer une photo de produit.
+     * Vérifie qu'on peut écrire puis relire un fichier. Sans ce test, un
+     * problème de stockage ne se découvre qu'au moment d'envoyer une photo.
      */
-    public function testerMinio(): void
+    public function testerStockage(): void
     {
         $disque = config('naneu.storage.disk');
 
         try {
             $sonde = 'diagnostic/'.uniqid('test_', true).'.txt';
 
-            Storage::disk($disque)->put($sonde, 'Naneu Shop — test de connexion '.now()->toIso8601String());
+            Storage::disk($disque)->put($sonde, 'Naneu Shop — test de stockage '.now()->toIso8601String());
             $contenu = Storage::disk($disque)->get($sonde);
             Storage::disk($disque)->delete($sonde);
 
@@ -202,11 +202,9 @@ class SettingsPanel extends Component
                 throw new \RuntimeException('Le fichier écrit est revenu vide.');
             }
 
-            $this->toastSucces(__('Connexion à MinIO opérationnelle (bucket « :bucket »).', [
-                'bucket' => config('filesystems.disks.'.$disque.'.bucket'),
-            ]));
+            $this->toastSucces(__('Stockage des fichiers opérationnel.'));
         } catch (\Throwable $e) {
-            $this->toastErreur(__('MinIO injoignable : :erreur', ['erreur' => str($e->getMessage())->limit(180)]));
+            $this->toastErreur(__('Stockage des fichiers indisponible : :erreur', ['erreur' => str($e->getMessage())->limit(180)]));
         }
     }
 

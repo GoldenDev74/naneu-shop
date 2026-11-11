@@ -200,7 +200,7 @@
 
         {{-- ============ IMAGE ============ --}}
         <x-form.card icon="image" :title="__('Photo du produit')"
-                     :description="__('Stockée sur MinIO. Utile pour les vignettes de caisse.')">
+                     :description="__('Utile pour les vignettes de caisse.')">
 
             <div class="flex flex-wrap items-center gap-4">
                 @if ($image)
