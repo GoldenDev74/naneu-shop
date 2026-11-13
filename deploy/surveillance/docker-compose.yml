@@ -1,0 +1,139 @@
+# Surveillance Naneu Shop — Grafana + Loki + Prometheus + Alloy (VPS).
+#
+# À copier dans ~/naneu-shop/surveillance/ avec les dossiers alloy/, grafana/,
+# loki/, prometheus/ et un fichier .env (modèle : .env.example).
+#
+#   sudo docker compose up -d
+#
+# Seul Grafana est exposé, sur 127.0.0.1:3000, derrière Apache
+# (https://surveillance.naneushop.com, voir deploy/apache/surveillance.conf).
+# Mémoire : environ 1 Go au total (limites ci-dessous).
+#
+# Ce que chaque service fait :
+#   alloy          lit les journaux (Naneu, Apache, SSH) et les envoie à Loki ;
+#                  ajoute le pays de chaque IP (base /var/lib/naneu-geoip)
+#   loki           stocke les journaux 90 jours, interrogeables depuis Grafana
+#   prometheus     stocke les métriques (processeur, mémoire, disque, conteneurs)
+#   node-exporter  métriques de la machine
+#   cadvisor       métriques par conteneur Docker
+#   grafana        les tableaux de bord et les alertes e-mail
+
+name: naneu-surveillance
+
+services:
+  grafana:
+    image: grafana/grafana-oss:12.1.1
+    ports:
+      - "127.0.0.1:3000:3000"
+    environment:
+      GF_SERVER_ROOT_URL: https://${GRAFANA_DOMAINE}
+      GF_SERVER_DOMAIN: ${GRAFANA_DOMAINE}
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_MOT_DE_PASSE}
+      GF_SECURITY_COOKIE_SECURE: "true"
+      GF_SECURITY_COOKIE_SAMESITE: strict
+      GF_SECURITY_DISABLE_GRAVATAR: "true"
+      GF_SECURITY_STRICT_TRANSPORT_SECURITY: "true"
+      GF_SECURITY_X_CONTENT_TYPE_OPTIONS: "true"
+      GF_SECURITY_X_XSS_PROTECTION: "true"
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_USERS_ALLOW_ORG_CREATE: "false"
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+      GF_AUTH_BASIC_ENABLED: "false"
+      # Verrouillage après des échecs de connexion répétés (natif Grafana).
+      GF_SECURITY_DISABLE_BRUTE_FORCE_LOGIN_PROTECTION: "false"
+      GF_AUTH_LOGIN_MAXIMUM_INACTIVE_LIFETIME_DURATION: 7d
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+      GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
+      GF_NEWS_NEWS_FEED_ENABLED: "false"
+      GF_DEFAULT_LOCALE: fr-FR
+      GF_DATE_FORMATS_DEFAULT_TIMEZONE: Africa/Lome
+      # Alertes par e-mail via Resend (même clé que l'application).
+      GF_SMTP_ENABLED: "true"
+      GF_SMTP_HOST: smtp.resend.com:465
+      GF_SMTP_USER: resend
+      GF_SMTP_PASSWORD: ${RESEND_CLE}
+      GF_SMTP_FROM_ADDRESS: alertes@naneushop.com
+      GF_SMTP_FROM_NAME: Naneu Shop — Surveillance
+      GF_SMTP_STARTTLS_POLICY: NoStartTLS
+      ALERTES_EMAIL: ${ALERTES_EMAIL}
+    volumes:
+      - grafana:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+    depends_on: [loki, prometheus]
+    mem_limit: 256m
+    restart: unless-stopped
+
+  loki:
+    image: grafana/loki:3.5.3
+    command: -config.file=/etc/loki/config.yml
+    volumes:
+      - ./loki/config.yml:/etc/loki/config.yml:ro
+      - loki:/loki
+    mem_limit: 384m
+    restart: unless-stopped
+
+  alloy:
+    image: grafana/alloy:v1.10.0
+    command: run --server.http.listen-addr=0.0.0.0:12345 --storage.path=/var/lib/alloy /etc/alloy/config.alloy
+    volumes:
+      - ./alloy/config.alloy:/etc/alloy/config.alloy:ro
+      - alloy:/var/lib/alloy
+      # Journaux JSON de l'application (volume du projet naneu-shop).
+      - naneu-logs:/naneu-logs:ro
+      # Journaux Apache (naneushop + kargozen) et SSH (auth.log) de la machine.
+      - /var/log:/hote/log:ro
+      - /var/lib/naneu-geoip:/geoip:ro
+    depends_on: [loki]
+    mem_limit: 192m
+    restart: unless-stopped
+
+  prometheus:
+    image: prom/prometheus:v3.5.0
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+      - --storage.tsdb.retention.time=30d
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus:/prometheus
+    mem_limit: 256m
+    restart: unless-stopped
+
+  node-exporter:
+    image: prom/node-exporter:v1.9.1
+    command:
+      - --path.rootfs=/host
+    pid: host
+    volumes:
+      - /:/host:ro,rslave
+    mem_limit: 64m
+    restart: unless-stopped
+
+  cadvisor:
+    image: gcr.io/cadvisor/cadvisor:v0.52.1
+    command:
+      - --docker_only=true
+      - --housekeeping_interval=30s
+      - --store_container_labels=false
+      - --whitelisted_container_labels=com.docker.compose.service,com.docker.compose.project
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:ro
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+    devices:
+      - /dev/kmsg
+    privileged: true
+    mem_limit: 192m
+    restart: unless-stopped
+
+volumes:
+  grafana:
+  loki:
+  alloy:
+  prometheus:
+  naneu-logs:
+    external: true
+    name: naneu-shop_storage-logs

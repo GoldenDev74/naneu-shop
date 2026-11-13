@@ -25,12 +25,22 @@ return Application::configure(basePath: dirname(__DIR__))
         // pour générer des URL https (sinon « mixed content »).
         $middleware->trustProxies(at: '*');
 
+        // Avant tout le reste : refus des adresses bloquées et des pays non
+        // autorisés, puis une ligne de journal par requête (pour Grafana).
+        $middleware->append([
+            \App\Http\Middleware\FilterTraffic::class,
+            \App\Http\Middleware\LogRequest::class,
+        ]);
+
         // Les requêtes de l'application sont toutes internes : on peut
         // durcir les en-têtes sans risquer de casser un client tiers.
         $middleware->web(append: [
             \App\Http\Middleware\SecurityHeaders::class,
             \App\Http\Middleware\SetLocale::class,
             \App\Http\Middleware\LogoutIdleSession::class,
+            // Limite de requêtes par minute (AppServiceProvider::configureRateLimits),
+            // y compris les clics Livewire (/livewire/update passe par « web »).
+            \Illuminate\Routing\Middleware\ThrottleRequests::class.':naneu',
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

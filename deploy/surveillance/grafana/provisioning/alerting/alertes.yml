@@ -1,0 +1,192 @@
+# Alertes de surveillance, envoyées par e-mail (Resend) à ALERTES_EMAIL.
+apiVersion: 1
+
+contactPoints:
+  - orgId: 1
+    name: e-mail
+    receivers:
+      - uid: naneu-email
+        type: email
+        settings:
+          addresses: $ALERTES_EMAIL
+          singleEmail: true
+
+policies:
+  - orgId: 1
+    receiver: e-mail
+    group_by: [alertname]
+    group_wait: 30s
+    group_interval: 5m
+    repeat_interval: 4h
+
+groups:
+  - orgId: 1
+    name: Naneu — sécurité
+    folder: Naneu Shop
+    interval: 1m
+    rules:
+      - uid: naneu-echecs-connexion
+        title: Échecs de connexion répétés
+        condition: C
+        for: 0s
+        noDataState: OK
+        execErrState: Error
+        annotations:
+          summary: "Plus de 10 échecs de connexion à Naneu Shop en 15 minutes ({{ $values.B }}). Essai de mots de passe probable : voir le tableau « Adresses suspectes »."
+        data:
+          - refId: A
+            relativeTimeRange: { from: 900, to: 0 }
+            datasourceUid: loki
+            model:
+              refId: A
+              queryType: instant
+              expr: 'sum(count_over_time({job="naneu",canal="securite",evenement=~"connexion.echouee|connexion.bloquee|compte.verrouille"}[15m]))'
+          - refId: B
+            datasourceUid: __expr__
+            model: { refId: B, type: reduce, expression: A, reducer: last, settings: { mode: replaceNN, replaceWithValue: 0 } }
+          - refId: C
+            datasourceUid: __expr__
+            model: { refId: C, type: threshold, expression: B, conditions: [ { evaluator: { type: gt, params: [10] } } ] }
+
+      - uid: naneu-rafale-refus
+        title: Rafale de requêtes refusées
+        condition: C
+        for: 0s
+        noDataState: OK
+        execErrState: Error
+        annotations:
+          summary: "Plus de 200 requêtes refusées (hors Togo, adresse bloquée ou trop de requêtes) en 10 minutes ({{ $values.B }}). Attaque ou robot en cours."
+        data:
+          - refId: A
+            relativeTimeRange: { from: 600, to: 0 }
+            datasourceUid: loki
+            model:
+              refId: A
+              queryType: instant
+              expr: 'sum(count_over_time({job="naneu",canal="securite",evenement=~"acces.*"}[10m]))'
+          - refId: B
+            datasourceUid: __expr__
+            model: { refId: B, type: reduce, expression: A, reducer: last, settings: { mode: replaceNN, replaceWithValue: 0 } }
+          - refId: C
+            datasourceUid: __expr__
+            model: { refId: C, type: threshold, expression: B, conditions: [ { evaluator: { type: gt, params: [200] } } ] }
+
+      - uid: naneu-ssh
+        title: Tentatives SSH
+        condition: C
+        for: 0s
+        noDataState: OK
+        execErrState: Error
+        annotations:
+          summary: "Plus de 30 connexions SSH échouées en 15 minutes ({{ $values.B }})."
+        data:
+          - refId: A
+            relativeTimeRange: { from: 900, to: 0 }
+            datasourceUid: loki
+            model:
+              refId: A
+              queryType: instant
+              expr: 'sum(count_over_time({job="ssh",issue="echec"}[15m]))'
+          - refId: B
+            datasourceUid: __expr__
+            model: { refId: B, type: reduce, expression: A, reducer: last, settings: { mode: replaceNN, replaceWithValue: 0 } }
+          - refId: C
+            datasourceUid: __expr__
+            model: { refId: C, type: threshold, expression: B, conditions: [ { evaluator: { type: gt, params: [30] } } ] }
+
+  - orgId: 1
+    name: Naneu — fonctionnement
+    folder: Naneu Shop
+    interval: 1m
+    rules:
+      - uid: naneu-erreurs-appli
+        title: Erreurs de l'application
+        condition: C
+        for: 0s
+        noDataState: OK
+        execErrState: Error
+        annotations:
+          summary: "Naneu Shop a enregistré {{ $values.B }} erreur(s) en 10 minutes. Détails : tableau « Erreurs de l'application »."
+        data:
+          - refId: A
+            relativeTimeRange: { from: 600, to: 0 }
+            datasourceUid: loki
+            model:
+              refId: A
+              queryType: instant
+              expr: 'sum(count_over_time({job="naneu",canal="laravel",niveau=~"ERROR|CRITICAL|ALERT|EMERGENCY"}[10m]))'
+          - refId: B
+            datasourceUid: __expr__
+            model: { refId: B, type: reduce, expression: A, reducer: last, settings: { mode: replaceNN, replaceWithValue: 0 } }
+          - refId: C
+            datasourceUid: __expr__
+            model: { refId: C, type: threshold, expression: B, conditions: [ { evaluator: { type: gt, params: [0] } } ] }
+
+      - uid: naneu-conteneurs
+        title: Conteneur Naneu arrêté
+        condition: C
+        for: 2m
+        noDataState: Alerting
+        execErrState: Error
+        annotations:
+          summary: "Un des 5 conteneurs Naneu Shop (app, queue, scheduler, reverb, db) ne tourne plus : {{ $values.B }} sur 5 en marche."
+        data:
+          - refId: A
+            relativeTimeRange: { from: 300, to: 0 }
+            datasourceUid: prometheus
+            model:
+              refId: A
+              instant: true
+              expr: 'count(time() - container_last_seen{name=~"naneu-shop-(app|queue|scheduler|reverb|db)-1"} < 90)'
+          - refId: B
+            datasourceUid: __expr__
+            model: { refId: B, type: reduce, expression: A, reducer: last, settings: { mode: replaceNN, replaceWithValue: 0 } }
+          - refId: C
+            datasourceUid: __expr__
+            model: { refId: C, type: threshold, expression: B, conditions: [ { evaluator: { type: lt, params: [5] } } ] }
+
+      - uid: naneu-disque
+        title: Disque presque plein
+        condition: C
+        for: 10m
+        noDataState: NoData
+        execErrState: Error
+        annotations:
+          summary: "Disque du serveur rempli à {{ $values.B }} %."
+        data:
+          - refId: A
+            relativeTimeRange: { from: 300, to: 0 }
+            datasourceUid: prometheus
+            model:
+              refId: A
+              instant: true
+              expr: '100 * (1 - node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"})'
+          - refId: B
+            datasourceUid: __expr__
+            model: { refId: B, type: reduce, expression: A, reducer: last }
+          - refId: C
+            datasourceUid: __expr__
+            model: { refId: C, type: threshold, expression: B, conditions: [ { evaluator: { type: gt, params: [85] } } ] }
+
+      - uid: naneu-memoire
+        title: Mémoire presque saturée
+        condition: C
+        for: 10m
+        noDataState: NoData
+        execErrState: Error
+        annotations:
+          summary: "Mémoire du serveur utilisée à {{ $values.B }} %."
+        data:
+          - refId: A
+            relativeTimeRange: { from: 300, to: 0 }
+            datasourceUid: prometheus
+            model:
+              refId: A
+              instant: true
+              expr: '100 * (1 - node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)'
+          - refId: B
+            datasourceUid: __expr__
+            model: { refId: B, type: reduce, expression: A, reducer: last }
+          - refId: C
+            datasourceUid: __expr__
+            model: { refId: C, type: threshold, expression: B, conditions: [ { evaluator: { type: gt, params: [90] } } ] }

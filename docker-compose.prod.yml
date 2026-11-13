@@ -25,6 +25,8 @@ x-app: &app
     # Photos de produits, bons scannés et exports : à inclure dans les sauvegardes.
     - storage-app:/app/storage/app
     - storage-logs:/app/storage/logs
+    # Base de géolocalisation (deploy/maj-geoip.sh) : accès réservé au Togo.
+    - /var/lib/naneu-geoip:/geoip:ro
   depends_on:
     db:
       condition: service_healthy

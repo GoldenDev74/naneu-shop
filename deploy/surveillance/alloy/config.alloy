@@ -1,0 +1,167 @@
+// Grafana Alloy — collecte des journaux pour Loki.
+//
+//   job="naneu"   journaux JSON de l'application (canal requetes | securite | laravel)
+//   job="apache"  accès Apache (naneushop et kargozen), pays ajouté par GeoIP
+//   job="ssh"     tentatives de connexion SSH (auth.log)
+//
+// Peu d'étiquettes (labels) pour garder Loki léger : l'IP, le chemin et le
+// compte restent dans la ligne et se lisent avec `| json` dans Grafana.
+
+loki.write "local" {
+  endpoint {
+    url = "http://loki:3100/loki/api/v1/push"
+  }
+}
+
+// --- Application Naneu Shop --------------------------------------------------
+
+local.file_match "naneu" {
+  path_targets = [
+    {"__path__" = "/naneu-logs/requetes-*.log", "job" = "naneu", "canal" = "requetes"},
+    {"__path__" = "/naneu-logs/securite-*.log", "job" = "naneu", "canal" = "securite"},
+    {"__path__" = "/naneu-logs/laravel-*.log",  "job" = "naneu", "canal" = "laravel"},
+  ]
+  sync_period = "30s"
+}
+
+loki.source.file "naneu" {
+  targets       = local.file_match.naneu.targets
+  forward_to    = [loki.process.naneu.receiver]
+  tail_from_end = false
+}
+
+loki.process "naneu" {
+  // Lignes JSON (Monolog) : horodatage, statut HTTP, pays, évènement.
+  stage.match {
+    selector = "{canal=~\"requetes|securite\"}"
+
+    stage.json {
+      expressions = {
+        horodatage = "datetime",
+        evenement  = "message",
+        statut     = "context.statut",
+        pays       = "context.pays",
+      }
+    }
+
+    stage.timestamp {
+      source = "horodatage"
+      format = "RFC3339Nano"
+    }
+
+    stage.labels {
+      values = { statut = "", pays = "" }
+    }
+  }
+
+  stage.match {
+    selector = "{canal=\"securite\"}"
+
+    stage.labels {
+      values = { evenement = "" }
+    }
+  }
+
+  // Journal Laravel classique : une erreur s'étale sur plusieurs lignes.
+  stage.match {
+    selector = "{canal=\"laravel\"}"
+
+    stage.multiline {
+      firstline     = "^\\[\\d{4}-\\d{2}-\\d{2}"
+      max_wait_time = "3s"
+    }
+
+    stage.regex {
+      expression = "^\\[[^\\]]+\\] \\w+\\.(?P<niveau>[A-Z]+):"
+    }
+
+    stage.labels {
+      values = { niveau = "" }
+    }
+  }
+
+  forward_to = [loki.write.local.receiver]
+}
+
+// --- Apache (tous les sites de la machine) -----------------------------------
+
+local.file_match "apache" {
+  path_targets = [
+    {"__path__" = "/hote/log/apache2/*access*.log", "job" = "apache"},
+  ]
+  sync_period = "30s"
+}
+
+loki.source.file "apache" {
+  targets       = local.file_match.apache.targets
+  forward_to    = [loki.process.apache.receiver]
+  tail_from_end = false
+}
+
+loki.process "apache" {
+  // Formats « combined » et « vhost_combined » (préfixe site:port).
+  stage.regex {
+    expression = "^(?:(?P<site>[^\\s:]+):\\d+ )?(?P<ip>\\S+) \\S+ \\S+ \\[(?P<horodatage>[^\\]]+)\\] \"(?P<methode>\\S+) (?P<chemin>\\S+)[^\"]*\" (?P<statut>\\d{3})"
+  }
+
+  stage.timestamp {
+    source = "horodatage"
+    format = "02/Jan/2006:15:04:05 -0700"
+  }
+
+  stage.geoip {
+    db      = "/geoip/pays.mmdb"
+    db_type = "country"
+    source  = "ip"
+  }
+
+  stage.labels {
+    values = { site = "", statut = "", pays = "geoip_country_code" }
+  }
+
+  forward_to = [loki.write.local.receiver]
+}
+
+// --- SSH -----------------------------------------------------------------------
+
+local.file_match "ssh" {
+  path_targets = [
+    {"__path__" = "/hote/log/auth.log", "job" = "ssh"},
+  ]
+  sync_period = "30s"
+}
+
+loki.source.file "ssh" {
+  targets       = local.file_match.ssh.targets
+  forward_to    = [loki.process.ssh.receiver]
+  tail_from_end = false
+}
+
+loki.process "ssh" {
+  // Ne garde que sshd ; marque échecs et réussites.
+  stage.match {
+    selector = "{job=\"ssh\"} !~ \"sshd\""
+    action   = "drop"
+  }
+
+  stage.regex {
+    expression = "(?P<resultat>Failed password|Invalid user|Accepted publickey|Accepted password|Connection closed by authenticating user|Disconnected from invalid user).* (?P<ip>[0-9a-fA-F:.]{7,}) port"
+  }
+
+  stage.template {
+    source   = "issue"
+    template = "{{ if hasPrefix \"Accepted\" .resultat }}reussie{{ else if .resultat }}echec{{ end }}"
+  }
+
+  stage.geoip {
+    db      = "/geoip/pays.mmdb"
+    db_type = "country"
+    source  = "ip"
+  }
+
+  stage.labels {
+    values = { issue = "", pays = "geoip_country_code" }
+  }
+
+  forward_to = [loki.write.local.receiver]
+}
