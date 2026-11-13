@@ -122,6 +122,29 @@ groups:
             datasourceUid: __expr__
             model: { refId: C, type: threshold, expression: B, conditions: [ { evaluator: { type: gt, params: [0] } } ] }
 
+      - uid: sites-erreurs-5xx
+        title: Erreurs serveur sur un site (naneushop, kargozen)
+        condition: C
+        for: 0s
+        noDataState: OK
+        execErrState: Error
+        annotations:
+          summary: "Plus de 20 erreurs 5xx en 10 minutes sur un site web ({{ $values.B }}). Voir le tableau « Sites web »."
+        data:
+          - refId: A
+            relativeTimeRange: { from: 600, to: 0 }
+            datasourceUid: loki
+            model:
+              refId: A
+              queryType: instant
+              expr: 'sum(count_over_time({job="apache",statut=~"5.."}[10m]))'
+          - refId: B
+            datasourceUid: __expr__
+            model: { refId: B, type: reduce, expression: A, reducer: last, settings: { mode: replaceNN, replaceWithValue: 0 } }
+          - refId: C
+            datasourceUid: __expr__
+            model: { refId: C, type: threshold, expression: B, conditions: [ { evaluator: { type: gt, params: [20] } } ] }
+
       - uid: naneu-conteneurs
         title: Conteneur Naneu arrêté
         condition: C

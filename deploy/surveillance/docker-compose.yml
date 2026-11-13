@@ -85,6 +85,9 @@ services:
       # Journaux Apache (naneushop + kargozen) et SSH (auth.log) de la machine.
       - /var/log:/hote/log:ro
       - /var/lib/naneu-geoip:/geoip:ro
+      # Journaux de l'application kargozen (dossiers de journaux seulement).
+      - /var/www/kargozen/logs:/kargozen/logs:ro
+      - /var/www/kargozen/colis/logs:/kargozen/colis-logs:ro
     depends_on: [loki]
     mem_limit: 192m
     restart: unless-stopped

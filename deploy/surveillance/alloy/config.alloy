@@ -85,9 +85,14 @@ loki.process "naneu" {
 
 // --- Apache (tous les sites de la machine) -----------------------------------
 
+// Le site est fixé par le nom du fichier : kargozen écrit dans les fichiers
+// par défaut d'Apache (access.log / error.log, vhost par défaut du serveur).
 local.file_match "apache" {
   path_targets = [
-    {"__path__" = "/hote/log/apache2/*access*.log", "job" = "apache"},
+    {"__path__" = "/hote/log/apache2/access.log",                "job" = "apache", "site" = "kargozen"},
+    {"__path__" = "/hote/log/apache2/naneushop*access*.log",     "job" = "apache", "site" = "naneushop"},
+    {"__path__" = "/hote/log/apache2/surveillance*access*.log",  "job" = "apache", "site" = "surveillance"},
+    {"__path__" = "/hote/log/apache2/other_vhosts_access.log",   "job" = "apache", "site" = "autres"},
   ]
   sync_period = "30s"
 }
@@ -99,9 +104,9 @@ loki.source.file "apache" {
 }
 
 loki.process "apache" {
-  // Formats « combined » et « vhost_combined » (préfixe site:port).
+  // Formats « combined » et « vhost_combined » (préfixe hote:port).
   stage.regex {
-    expression = "^(?:(?P<site>[^\\s:]+):\\d+ )?(?P<ip>\\S+) \\S+ \\S+ \\[(?P<horodatage>[^\\]]+)\\] \"(?P<methode>\\S+) (?P<chemin>\\S+)[^\"]*\" (?P<statut>\\d{3})"
+    expression = "^(?:(?P<vhost>[^\\s:]+):\\d+ )?(?P<ip>\\S+) \\S+ \\S+ \\[(?P<horodatage>[^\\]]+)\\] \"(?P<methode>\\S+) (?P<chemin>\\S+)[^\"]*\" (?P<statut>\\d{3})"
   }
 
   stage.timestamp {
@@ -116,10 +121,57 @@ loki.process "apache" {
   }
 
   stage.labels {
-    values = { site = "", statut = "", pays = "geoip_country_code" }
+    values = { statut = "", pays = "geoip_country_code" }
   }
 
   forward_to = [loki.write.local.receiver]
+}
+
+// --- Erreurs Apache (PHP de kargozen compris : ses erreurs PHP vont dans error.log)
+
+local.file_match "apache_erreurs" {
+  path_targets = [
+    {"__path__" = "/hote/log/apache2/error.log",                "job" = "apache_erreurs", "site" = "kargozen"},
+    {"__path__" = "/hote/log/apache2/naneushop*error*.log",     "job" = "apache_erreurs", "site" = "naneushop"},
+    {"__path__" = "/hote/log/apache2/surveillance*error*.log",  "job" = "apache_erreurs", "site" = "surveillance"},
+  ]
+  sync_period = "30s"
+}
+
+loki.source.file "apache_erreurs" {
+  targets       = local.file_match.apache_erreurs.targets
+  forward_to    = [loki.process.apache_erreurs.receiver]
+  tail_from_end = false
+}
+
+loki.process "apache_erreurs" {
+  // [date] [module:niveau] [pid N] [client IP:port] message
+  stage.regex {
+    expression = "^\\[[^\\]]+\\] \\[(?:[\\w-]+:)?(?P<niveau>\\w+)\\](?: \\[pid [^\\]]+\\])?(?: \\[client (?P<ip>[0-9a-fA-F:.]+?)(?::\\d+)?\\])?"
+  }
+
+  stage.labels {
+    values = { niveau = "" }
+  }
+
+  forward_to = [loki.write.local.receiver]
+}
+
+// --- Journaux de l'application kargozen ----------------------------------------
+// Seuls les dossiers de journaux sont montés (pas config.php ni le code).
+
+local.file_match "kargozen" {
+  path_targets = [
+    {"__path__" = "/kargozen/logs/*.log",       "job" = "kargozen", "journal" = "cron"},
+    {"__path__" = "/kargozen/colis-logs/*.log", "job" = "kargozen", "journal" = "notifications"},
+  ]
+  sync_period = "60s"
+}
+
+loki.source.file "kargozen" {
+  targets       = local.file_match.kargozen.targets
+  forward_to    = [loki.write.local.receiver]
+  tail_from_end = false
 }
 
 // --- SSH -----------------------------------------------------------------------

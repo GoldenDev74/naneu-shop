@@ -1,0 +1,945 @@
+{
+  "uid": "naneu-sites",
+  "title": "Sites web — naneushop, kargozen",
+  "tags": [
+    "naneu",
+    "kargozen",
+    "apache"
+  ],
+  "timezone": "Africa/Lome",
+  "editable": false,
+  "schemaVersion": 41,
+  "version": 1,
+  "refresh": "1m",
+  "time": {
+    "from": "now-24h",
+    "to": "now"
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Requêtes",
+      "description": "",
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 6,
+        "h": 4
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "expr": "sum(count_over_time({job=\"apache\",site=~\"$site\"}[$__range]))",
+          "queryType": "instant",
+          "instant": true
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "noValue": "0",
+          "decimals": 0,
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "blue"
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Adresses IP distinctes",
+      "description": "",
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "x": 6,
+        "y": 0,
+        "w": 6,
+        "h": 4
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "expr": "count(sum by (ip) (count_over_time({job=\"apache\",site=~\"$site\"} | regexp \"^(?:\\\\S+:\\\\d+ )?(?P<ip>\\\\S+) \" [$__range])))",
+          "queryType": "instant",
+          "instant": true
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "noValue": "0",
+          "decimals": 0,
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "purple"
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "Erreurs serveur (5xx)",
+      "description": "",
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 0,
+        "w": 6,
+        "h": 4
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "expr": "sum(count_over_time({job=\"apache\",site=~\"$site\",statut=~\"5..\"}[$__range]))",
+          "queryType": "instant",
+          "instant": true
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "noValue": "0",
+          "decimals": 0,
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "red"
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Erreurs Apache / PHP",
+      "description": "",
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "x": 18,
+        "y": 0,
+        "w": 6,
+        "h": 4
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "expr": "sum(count_over_time({job=\"apache_erreurs\",site=~\"$site\",niveau=~\"error|crit|alert|emerg\"}[$__range]))",
+          "queryType": "instant",
+          "instant": true
+        }
+      ],
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "background",
+        "graphMode": "none",
+        "textMode": "value"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "noValue": "0",
+          "decimals": 0,
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "orange"
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 5,
+      "type": "timeseries",
+      "title": "Requêtes par site",
+      "description": "",
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 4,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "expr": "sum by (site) (count_over_time({job=\"apache\",site=~\"$site\"}[$__interval]))",
+          "legendFormat": "{{site}}",
+          "queryType": "range"
+        }
+      ],
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "calcs": [
+            "sum"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 70,
+            "stacking": {
+              "mode": "normal"
+            },
+            "lineWidth": 1
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 6,
+      "type": "timeseries",
+      "title": "Codes de réponse",
+      "description": "",
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 4,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "expr": "sum by (statut) (count_over_time({job=\"apache\",site=~\"$site\"}[$__interval]))",
+          "legendFormat": "{{statut}}",
+          "queryType": "range"
+        }
+      ],
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "right",
+          "calcs": [
+            "sum"
+          ]
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "custom": {
+            "drawStyle": "bars",
+            "fillOpacity": 70,
+            "stacking": {
+              "mode": "normal"
+            },
+            "lineWidth": 1
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 7,
+      "type": "table",
+      "title": "Adresses IP les plus actives",
+      "description": "",
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 12,
+        "w": 12,
+        "h": 9
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "expr": "topk(25, sum by (ip, pays, site) (count_over_time({job=\"apache\",site=~\"$site\"} | regexp \"^(?:\\\\S+:\\\\d+ )?(?P<ip>\\\\S+) \" [$__range])))",
+          "queryType": "instant",
+          "instant": true
+        }
+      ],
+      "transformations": [
+        {
+          "id": "labelsToFields",
+          "options": {
+            "mode": "columns"
+          }
+        },
+        {
+          "id": "merge",
+          "options": {}
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true
+            },
+            "renameByName": {
+              "Value": "Nombre",
+              "Value #A": "Nombre",
+              "ip": "Adresse IP",
+              "pays": "Pays",
+              "site": "Site"
+            }
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "sort": [
+              {
+                "field": "Nombre",
+                "desc": true
+              }
+            ]
+          }
+        }
+      ],
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm"
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Nombre"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "gauge",
+                  "mode": "basic"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": 8,
+      "type": "table",
+      "title": "Pays d'origine",
+      "description": "",
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 12,
+        "w": 6,
+        "h": 9
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "expr": "sum by (pays) (count_over_time({job=\"apache\",site=~\"$site\"}[$__range]))",
+          "queryType": "instant",
+          "instant": true
+        }
+      ],
+      "transformations": [
+        {
+          "id": "labelsToFields",
+          "options": {
+            "mode": "columns"
+          }
+        },
+        {
+          "id": "merge",
+          "options": {}
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true
+            },
+            "renameByName": {
+              "Value": "Nombre",
+              "Value #A": "Nombre",
+              "pays": "Pays"
+            }
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "sort": [
+              {
+                "field": "Nombre",
+                "desc": true
+              }
+            ]
+          }
+        }
+      ],
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm"
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Nombre"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "gauge",
+                  "mode": "basic"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": 9,
+      "type": "table",
+      "title": "Pages les plus demandées",
+      "description": "",
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "x": 18,
+        "y": 12,
+        "w": 6,
+        "h": 9
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "expr": "topk(20, sum by (chemin) (count_over_time({job=\"apache\",site=~\"$site\"} | regexp \"\\\"\\\\S+ (?P<chemin>[^ ?\\\"]+)\" [$__range])))",
+          "queryType": "instant",
+          "instant": true
+        }
+      ],
+      "transformations": [
+        {
+          "id": "labelsToFields",
+          "options": {
+            "mode": "columns"
+          }
+        },
+        {
+          "id": "merge",
+          "options": {}
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true
+            },
+            "renameByName": {
+              "Value": "Nombre",
+              "Value #A": "Nombre",
+              "chemin": "Chemin"
+            }
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "sort": [
+              {
+                "field": "Nombre",
+                "desc": true
+              }
+            ]
+          }
+        }
+      ],
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm"
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Nombre"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "gauge",
+                  "mode": "basic"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": 10,
+      "type": "table",
+      "title": "Pages en erreur (4xx / 5xx)",
+      "description": "Des 404 sur /wp-admin, /.env, /phpmyadmin… = robots qui cherchent des failles. Des 200 sur un fichier sensible = fuite à corriger.",
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 21,
+        "w": 12,
+        "h": 9
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "expr": "topk(25, sum by (chemin, statut, site) (count_over_time({job=\"apache\",site=~\"$site\",statut=~\"4..|5..\"} | regexp \"\\\"\\\\S+ (?P<chemin>[^ ?\\\"]+)\" [$__range])))",
+          "queryType": "instant",
+          "instant": true
+        }
+      ],
+      "transformations": [
+        {
+          "id": "labelsToFields",
+          "options": {
+            "mode": "columns"
+          }
+        },
+        {
+          "id": "merge",
+          "options": {}
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true
+            },
+            "renameByName": {
+              "Value": "Nombre",
+              "Value #A": "Nombre",
+              "chemin": "Chemin",
+              "statut": "Code",
+              "site": "Site"
+            }
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "sort": [
+              {
+                "field": "Nombre",
+                "desc": true
+              }
+            ]
+          }
+        }
+      ],
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm"
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Nombre"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "gauge",
+                  "mode": "basic"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": 11,
+      "type": "table",
+      "title": "Fichiers sensibles demandés",
+      "description": "Code 200 = le fichier a réellement été servi : à bloquer ou supprimer.",
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 21,
+        "w": 12,
+        "h": 9
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "expr": "topk(25, sum by (chemin, statut, ip) (count_over_time({job=\"apache\",site=~\"$site\"} | regexp \"\\\"\\\\S+ (?P<chemin>[^ ?\\\"]+)\" | regexp \"^(?:\\\\S+:\\\\d+ )?(?P<ip>\\\\S+) \" | chemin=~\"(?i).*(phpinfo|\\\\.env|\\\\.git|config\\\\.php|composer\\\\.(json|lock)|/vendor/|\\\\.log|\\\\.sql|backup|\\\\.tar|\\\\.zip).*\" [$__range])))",
+          "queryType": "instant",
+          "instant": true
+        }
+      ],
+      "transformations": [
+        {
+          "id": "labelsToFields",
+          "options": {
+            "mode": "columns"
+          }
+        },
+        {
+          "id": "merge",
+          "options": {}
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true
+            },
+            "renameByName": {
+              "Value": "Nombre",
+              "Value #A": "Nombre",
+              "chemin": "Chemin",
+              "statut": "Code",
+              "ip": "Adresse IP"
+            }
+          }
+        },
+        {
+          "id": "sortBy",
+          "options": {
+            "sort": [
+              {
+                "field": "Nombre",
+                "desc": true
+              }
+            ]
+          }
+        }
+      ],
+      "options": {
+        "showHeader": true,
+        "cellHeight": "sm"
+      },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Nombre"
+            },
+            "properties": [
+              {
+                "id": "custom.cellOptions",
+                "value": {
+                  "type": "gauge",
+                  "mode": "basic"
+                }
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": 12,
+      "type": "logs",
+      "title": "Erreurs Apache et PHP",
+      "description": "",
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 30,
+        "w": 24,
+        "h": 12
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "expr": "{job=\"apache_erreurs\",site=~\"$site\"} | niveau=~\"$niveau\"",
+          "queryType": "range"
+        }
+      ],
+      "options": {
+        "showTime": true,
+        "wrapLogMessage": true,
+        "sortOrder": "Descending",
+        "enableLogDetails": true,
+        "dedupStrategy": "none"
+      }
+    },
+    {
+      "id": 13,
+      "type": "logs",
+      "title": "Accès (filtrer avec « Adresse IP » en haut)",
+      "description": "",
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 42,
+        "w": 24,
+        "h": 12
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "expr": "{job=\"apache\",site=~\"$site\"} |= \"$ip\"",
+          "queryType": "range"
+        }
+      ],
+      "options": {
+        "showTime": true,
+        "wrapLogMessage": true,
+        "sortOrder": "Descending",
+        "enableLogDetails": true,
+        "dedupStrategy": "none"
+      }
+    },
+    {
+      "id": 14,
+      "type": "logs",
+      "title": "Journaux de l'application kargozen (cron, notifications)",
+      "description": "",
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 54,
+        "w": 24,
+        "h": 10
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "expr": "{job=\"kargozen\"}",
+          "queryType": "range"
+        }
+      ],
+      "options": {
+        "showTime": true,
+        "wrapLogMessage": true,
+        "sortOrder": "Descending",
+        "enableLogDetails": true,
+        "dedupStrategy": "none"
+      }
+    }
+  ],
+  "templating": {
+    "list": [
+      {
+        "name": "site",
+        "label": "Site",
+        "type": "custom",
+        "query": "kargozen,naneushop,surveillance,autres",
+        "multi": true,
+        "includeAll": true,
+        "allValue": ".+",
+        "current": {
+          "text": [
+            "All"
+          ],
+          "value": [
+            "$__all"
+          ]
+        },
+        "hide": 0,
+        "options": []
+      },
+      {
+        "name": "niveau",
+        "label": "Niveau d'erreur",
+        "type": "custom",
+        "query": "error,crit,warn,notice,info",
+        "multi": true,
+        "includeAll": true,
+        "allValue": ".+",
+        "current": {
+          "text": [
+            "error",
+            "crit"
+          ],
+          "value": [
+            "error",
+            "crit"
+          ]
+        },
+        "hide": 0,
+        "options": []
+      },
+      {
+        "name": "ip",
+        "label": "Adresse IP",
+        "type": "textbox",
+        "query": "",
+        "current": {
+          "text": "",
+          "value": ""
+        },
+        "hide": 0
+      }
+    ]
+  },
+  "annotations": {
+    "list": []
+  },
+  "links": []
+}
