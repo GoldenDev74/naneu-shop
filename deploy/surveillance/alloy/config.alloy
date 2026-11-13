@@ -20,6 +20,8 @@ local.file_match "naneu" {
     {"__path__" = "/naneu-logs/requetes-*.log", "job" = "naneu", "canal" = "requetes"},
     {"__path__" = "/naneu-logs/securite-*.log", "job" = "naneu", "canal" = "securite"},
     {"__path__" = "/naneu-logs/laravel-*.log",  "job" = "naneu", "canal" = "laravel"},
+    // Site de la clinique (Laravel aussi) : mêmes traitements que Naneu.
+    {"__path__" = "/clinique-logs/laravel-*.log", "job" = "clinique", "canal" = "laravel"},
   ]
   sync_period = "30s"
 }
@@ -92,6 +94,7 @@ local.file_match "apache" {
     {"__path__" = "/hote/log/apache2/access.log",                "job" = "apache", "site" = "kargozen"},
     {"__path__" = "/hote/log/apache2/naneushop*access*.log",     "job" = "apache", "site" = "naneushop"},
     {"__path__" = "/hote/log/apache2/surveillance*access*.log",  "job" = "apache", "site" = "surveillance"},
+    {"__path__" = "/hote/log/apache2/clinique*access*.log",      "job" = "apache", "site" = "clinique"},
     {"__path__" = "/hote/log/apache2/other_vhosts_access.log",   "job" = "apache", "site" = "autres"},
   ]
   sync_period = "30s"
@@ -134,6 +137,7 @@ local.file_match "apache_erreurs" {
     {"__path__" = "/hote/log/apache2/error.log",                "job" = "apache_erreurs", "site" = "kargozen"},
     {"__path__" = "/hote/log/apache2/naneushop*error*.log",     "job" = "apache_erreurs", "site" = "naneushop"},
     {"__path__" = "/hote/log/apache2/surveillance*error*.log",  "job" = "apache_erreurs", "site" = "surveillance"},
+    {"__path__" = "/hote/log/apache2/clinique*error*.log",      "job" = "apache_erreurs", "site" = "clinique"},
   ]
   sync_period = "30s"
 }

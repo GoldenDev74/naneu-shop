@@ -1,6 +1,6 @@
 {
   "uid": "naneu-sites",
-  "title": "Sites web — naneushop, kargozen",
+  "title": "Sites web — naneushop, kargozen, clinique",
   "tags": [
     "naneu",
     "kargozen",
@@ -881,6 +881,40 @@
         "enableLogDetails": true,
         "dedupStrategy": "none"
       }
+    },
+    {
+      "id": 15,
+      "type": "logs",
+      "title": "Erreurs du site de la clinique (Laravel)",
+      "description": "",
+      "datasource": {
+        "type": "loki",
+        "uid": "loki"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 64,
+        "w": 24,
+        "h": 10
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "loki",
+            "uid": "loki"
+          },
+          "expr": "{job=\"clinique\",canal=\"laravel\",niveau=~\"ERROR|CRITICAL|ALERT|EMERGENCY\"}",
+          "queryType": "range"
+        }
+      ],
+      "options": {
+        "showTime": true,
+        "wrapLogMessage": true,
+        "sortOrder": "Descending",
+        "enableLogDetails": true,
+        "dedupStrategy": "none"
+      }
     }
   ],
   "templating": {
@@ -889,7 +923,7 @@
         "name": "site",
         "label": "Site",
         "type": "custom",
-        "query": "kargozen,naneushop,surveillance,autres",
+        "query": "clinique,kargozen,naneushop,surveillance,autres",
         "multi": true,
         "includeAll": true,
         "allValue": ".+",
