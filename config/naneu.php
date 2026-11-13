@@ -87,6 +87,31 @@ return [
         'max_failed_logins' => (int) env('NANEU_MAX_FAILED_LOGINS', 5),
         'lockout_minutes'   => (int) env('NANEU_LOCKOUT_MINUTES', 15),
         'idle_minutes'      => (int) env('NANEU_IDLE_MINUTES', 30),
+
+        // Accès réservé à certains pays (codes ISO, ex. TG). Désactivé tant
+        // que NANEU_GEO_ENABLED n'est pas vrai : en développement, l'adresse
+        // est locale et la base de géolocalisation absente.
+        // Base : DB-IP « IP to Country Lite » (format .mmdb, gratuite,
+        // mise à jour par deploy/maj-geoip.sh). Base absente = accès ouvert
+        // (on ne coupe pas la boutique pour un fichier manquant) + avertissement.
+        'geo' => [
+            'enabled'   => (bool) env('NANEU_GEO_ENABLED', false),
+            'countries' => array_filter(array_map('trim', explode(',', (string) env('NANEU_GEO_COUNTRIES', 'TG')))),
+            'database'  => env('NANEU_GEOIP_DB', '/geoip/pays.mmdb'),
+            // Chemins jamais filtrés : renouvellement HTTPS (Let's Encrypt
+            // vérifie depuis l'étranger) et sonde de disponibilité.
+            'except'    => ['up', '.well-known/acme-challenge/*'],
+        ],
+
+        // Requêtes par minute. Au-delà : réponse 429, tracée dans le journal.
+        'rate_limits' => [
+            'guest'  => (int) env('NANEU_RATE_GUEST', 60),
+            'user'   => (int) env('NANEU_RATE_USER', 300),
+        ],
+
+        // Durée de conservation des journaux de requêtes et de sécurité
+        // (adresses IP = données personnelles : pas de conservation illimitée).
+        'log_days' => (int) env('NANEU_SECURITY_LOG_DAYS', 90),
     ],
 
     'vat' => [

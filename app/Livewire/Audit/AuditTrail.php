@@ -65,6 +65,7 @@ class AuditTrail extends Component
 
         return view('livewire.audit.audit-trail', [
             'entrees'    => $entrees,
+            'gererIp'    => auth()->user()->can('gerer-adresses-ip'),
             'evenements' => AuditLog::query()
                 ->distinct()
                 ->orderBy('event')

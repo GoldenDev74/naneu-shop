@@ -9,6 +9,11 @@ use App\Listeners\RecordAuthenticationAudit;
 use App\Listeners\RecordStockMovementAudit;
 use App\Models\User;
 use App\Policies\UserPolicy;
+use App\Services\GeoIp;
+use App\Support\SecurityLog;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\RateLimiter;
 use App\Support\LooseSearch;
 use App\Support\ShopSettings;
 use Illuminate\Database\Eloquent\Model;
@@ -24,7 +29,8 @@ class AppServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        //
+        // Un seul lecteur de la base de géolocalisation par processus.
+        $this->app->singleton(GeoIp::class, fn () => new GeoIp((string) config('naneu.security.geo.database')));
     }
 
     public function boot(): void
@@ -34,6 +40,7 @@ class AppServiceProvider extends ServiceProvider
         LooseSearch::register();
         $this->configurePasswords();
         $this->configureSecurity();
+        $this->configureRateLimits();
         $this->registerSubscribers();
         $this->registerGates();
         $this->applyShopSettings();
@@ -104,6 +111,35 @@ class AppServiceProvider extends ServiceProvider
         ]);
     }
 
+    /**
+     * Limite « naneu » appliquée à tout le groupe web : par compte une fois
+     * connecté (plusieurs caisses peuvent partager l'IP de la boutique), par
+     * adresse IP sinon. Chaque dépassement est tracé pour Grafana.
+     */
+    private function configureRateLimits(): void
+    {
+        RateLimiter::for('naneu', function (Request $request) {
+            $limites = config('naneu.security.rate_limits');
+            $user = $request->user();
+
+            $limite = $user
+                ? Limit::perMinute(max(1, (int) $limites['user']))->by('compte:'.$user->id)
+                : Limit::perMinute(max(1, (int) $limites['guest']))->by('ip:'.$request->ip());
+
+            return $limite->response(function (Request $request, array $headers) {
+                SecurityLog::evenement('acces.trop_de_requetes', [], $request);
+
+                return response()->view('errors.page', [
+                    'code'  => 429,
+                    'titre' => __('Trop de requêtes'),
+                    'texte' => __('Vous avez envoyé trop de requêtes en peu de temps. Patientez une minute puis réessayez.'),
+                    'icone' => 'timer',
+                    'ton'   => 'ambre',
+                ], 429, $headers);
+            });
+        });
+    }
+
     private function registerSubscribers(): void
     {
         // RecordAuthenticationAudit et RecordStockMovementAudit sont trouvés
@@ -123,5 +159,7 @@ class AppServiceProvider extends ServiceProvider
         // Portes transverses, utilisées dans les vues et les composants.
         Gate::define('gerer-parametres', fn (User $user) => $user->canAccess('parametres'));
         Gate::define('voir-journal-audit', fn (User $user) => $user->canAccess('journal'));
+        // Bloquer ou autoriser une adresse IP : réservé à la gérance.
+        Gate::define('gerer-adresses-ip', fn (User $user) => $user->role->isManagement() && $user->canAccess('journal'));
     }
 }

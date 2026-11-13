@@ -15,7 +15,8 @@
         "livewire/livewire": "^3.6.4",
         "livewire/volt": "^1.7.0",
         "maatwebsite/excel": "^4.0",
-        "mallardduck/blade-lucide-icons": "^2.0"
+        "mallardduck/blade-lucide-icons": "^2.0",
+        "maxmind-db/reader": "^1.12"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",

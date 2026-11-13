@@ -52,6 +52,12 @@ class AuditLog extends Model
                 'user_agent'     => str($request?->userAgent() ?? '')->limit(250)->value(),
                 'created_at'     => now(),
             ]);
+
+            // Copie dans le journal JSON lu par Grafana.
+            \App\Support\SecurityLog::evenement($event, [
+                'compte_concerne' => $user?->username,
+                'proprietes'      => static::scrub($properties),
+            ], $request);
         } catch (\Throwable $e) {
             report($e);
         }

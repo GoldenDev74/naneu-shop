@@ -73,6 +73,26 @@ return [
             'replace_placeholders' => true,
         ],
 
+        // Une ligne JSON par requête (IP, pays, compte, chemin, statut,
+        // durée), lue par Grafana Alloy et envoyée à Loki.
+        'requetes' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/requetes.log'),
+            'level' => 'info',
+            'days' => env('NANEU_SECURITY_LOG_DAYS', 90),
+            'formatter' => Monolog\Formatter\JsonFormatter::class,
+        ],
+
+        // Évènements de sécurité (connexions, blocages, limites dépassées,
+        // copie du journal d'audit), en JSON pour Grafana.
+        'securite' => [
+            'driver' => 'daily',
+            'path' => storage_path('logs/securite.log'),
+            'level' => 'info',
+            'days' => env('NANEU_SECURITY_LOG_DAYS', 90),
+            'formatter' => Monolog\Formatter\JsonFormatter::class,
+        ],
+
         'slack' => [
             'driver' => 'slack',
             'url' => env('LOG_SLACK_WEBHOOK_URL'),
