@@ -267,7 +267,7 @@ class CoherenceRulesTest extends TestCase
         $this->assertSame([0, 1, 1, 0, 1], $arbre->pluck('profondeur')->all());
     }
 
-    public function test_pr3_pr4_unite_obligatoire_et_perissable_selon_la_categorie(): void
+    public function test_pr3_pr4_unite_proposee_et_perissable_selon_la_categorie(): void
     {
         $hygiene = Category::create(['name' => 'Hygiène', 'color' => '#56c389']);
         $frais = Category::create(['name' => 'Frais', 'color' => '#56c389']);
@@ -284,7 +284,19 @@ class CoherenceRulesTest extends TestCase
             ->set('category_id', $hygiene->id)
             ->assertSet('is_perishable', false);
 
-        $formulaire->set('name', 'Dentifrice')->set('unit_id', null)
+        // L'unité est facultative : sans elle, le produit se compte en entiers.
+        $formulaire->set('name', 'Dentifrice')->set('unit_id', null)->set('sale_price', '1500')
+            ->call('enregistrer')
+            ->assertHasNoErrors();
+
+        $dentifrice = Product::where('name', 'Dentifrice')->firstOrFail();
+        $this->assertNull($dentifrice->unit_id);
+    }
+
+    public function test_pr3_unite_inconnue_refusee(): void
+    {
+        Livewire::actingAs($this->gerante)->test(ProductForm::class)
+            ->set('name', 'Dentifrice')->set('unit_id', 999999)->set('sale_price', '1500')
             ->call('enregistrer')
             ->assertHasErrors('unit_id');
     }
