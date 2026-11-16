@@ -137,7 +137,8 @@ class ProductForm extends Component
             'name'                => ['required', 'string', 'max:180'],
             'description'         => ['nullable', 'string', 'max:2000'],
             'category_id'         => ['nullable', 'exists:categories,id'],
-            'unit_id'             => ['required', 'exists:units,id'],
+            // Facultative : sans unité, le produit se compte en nombres entiers.
+            'unit_id'             => ['nullable', 'exists:units,id'],
             'default_supplier_id' => ['nullable', 'exists:suppliers,id'],
             'sale_price'          => ['required', 'string'],
             'vat_rate'            => ['required', 'numeric', 'min:0', 'max:100'],
@@ -165,7 +166,6 @@ class ProductForm extends Component
             'barcode.unique'  => 'Ce code-barres est déjà attribué à un autre produit.',
             'sku.unique'      => 'Cette référence interne est déjà utilisée.',
             'name.required'   => 'Le nom du produit est obligatoire.',
-            'unit_id.required' => 'Choisissez l\'unité de vente (pièce, kilogramme, litre…).',
             'image.max'       => 'L\'image ne doit pas dépasser :max Ko.',
         ];
     }

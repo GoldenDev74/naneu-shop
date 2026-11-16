@@ -78,10 +78,10 @@
                     </select>
                 </x-form.field>
 
-                <x-form.field :label="__('Unité de mesure')" name="unit_id" required>
+                <x-form.field :label="__('Unité de mesure')" name="unit_id">
                     <select wire:model="unit_id"
                             class="champ w-full">
-                        <option value="">{{ __('Choisir…') }}</option>
+                        <option value="">{{ __('Aucune (quantités entières)') }}</option>
                         @foreach ($unites as $unite)
                             <option value="{{ $unite->id }}">{{ $unite->name }} ({{ $unite->symbol }})</option>
                         @endforeach
